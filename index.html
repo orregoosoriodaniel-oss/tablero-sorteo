@@ -1,4 +1,4 @@
- <!DOCTYPE html>
+               <!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
@@ -68,6 +68,8 @@
       border-radius: 999px;
       padding: 8px 12px;
       font-size: 14px;
+      color: #111;
+      font-weight: 800;
     }
 
     .panel {
@@ -285,7 +287,7 @@
   <div class="wrap">
     <div class="header">
       <h1 class="title" id="titleText">🔥 Dinámicas D y S 🔥</h1>
-      <p class="subtitle" id="lotteryText">Lotería / sorteo: sin definir</p>
+      <p class="subtitle" id="lotteryText">Lotería / sorteo: sin definir | Valor: $0</p>
 
       <div class="prizes" id="prizesPreview">
         <div class="prize-pill">🥇 Premio mayor: <span id="p1View">0000</span></div>
@@ -406,25 +408,20 @@
       return v ? v : "0000";
     }
 
-    function guardarConfig() {
+    function syncConfigFromInputs() {
       config.lotteryName = lotteryInput.value.trim();
       config.valor = parseInt(valorInput.value, 10) || 0;
       config.groupName = groupNameInput.value.trim() || "Dinámicas D y S";
       config.premio1 = premio1Input.value.trim();
       config.premio2 = premio2Input.value.trim();
       config.premio3 = premio3Input.value.trim();
-
-      localStorage.setItem("config", JSON.stringify(config));
-      renderHeader();
-      actualizarResumen();
-      alert("✅ Configuración guardada");
     }
 
     function renderHeader() {
       titleText.textContent = `🔥 ${config.groupName} 🔥`;
       lotteryText.textContent = config.lotteryName
-        ? `Lotería / sorteo: ${config.lotteryName}`
-        : "Lotería / sorteo: sin definir";
+        ? `Lotería / sorteo: ${config.lotteryName} | Valor: $${config.valor}`
+        : `Lotería / sorteo: sin definir | Valor: $${config.valor}`;
 
       p1View.textContent = formatoPremio(config.premio1);
       p2View.textContent = formatoPremio(config.premio2);
@@ -453,6 +450,14 @@
         : "Sin ventas todavía.";
     }
 
+    function guardarConfig() {
+      syncConfigFromInputs();
+      localStorage.setItem("config", JSON.stringify(config));
+      renderHeader();
+      actualizarResumen();
+      alert("✅ Configuración guardada");
+    }
+
     function guardarDatos() {
       localStorage.setItem("datos", JSON.stringify(datos));
     }
@@ -478,7 +483,7 @@
       div.classList.add("sold");
       const mini = div.querySelector(".mini");
       if (mini) {
-        mini.textContent = `${nombre.trim()}\n${telefono.trim()}`;
+        mini.innerHTML = `${nombre.trim()}<br>${telefono.trim()}`;
       }
 
       guardarDatos();
@@ -513,6 +518,14 @@
       actualizarResumen();
       alert("✅ Nuevo sorteo iniciado");
     }
+
+    [lotteryInput, valorInput, groupNameInput, premio1Input, premio2Input, premio3Input].forEach(input => {
+      input.addEventListener("input", () => {
+        syncConfigFromInputs();
+        renderHeader();
+        actualizarResumen();
+      });
+    });
 
     renderHeader();
     renderGrid();
