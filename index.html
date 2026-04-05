@@ -1,125 +1,430 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<title>Dinámicas D y S</title>
-
-<style>
-body {
-    font-family: Arial;
-    text-align: center;
-    background: #f5f5f5;
-}
-
-h1 {
-    margin-top: 10px;
-}
-
-.panel {
-    margin: 10px;
-    font-weight: bold;
-}
-
-.botones {
-    margin: 10px;
-}
-
-button {
-    padding: 8px 12px;
-    margin: 5px;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    font-weight: bold;
-}
-
-.reset { background: #ff4d4d; color: white; }
-.export { background: #4CAF50; color: white; }
-
-.grid {
-    display: grid;
-    grid-template-columns: repeat(10, 60px);
-    gap: 8px;
-    justify-content: center;
-    margin-top: 20px;
-}
-
-.cell {
-    width: 60px;
-    height: 60px;
-    background-color: #6f9e86;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 10px;
-    cursor: pointer;
-    font-weight: bold;
-}
-
-.sold {
-    background-color: red;
-    color: white;
-}
-</style>
-</head>
-
-<body>
-
-<h1>🔥 Dinámicas D y S 🔥</h1>
-
-<div class="panel">💰 Vendidos: <span id="vendidos">0</span></div>
-<div class="panel">📊 Disponibles: <span id="disponibles">100</span></div>
-<div class="panel">💵 Total: $<span id="total">0</span></div>
-
-<div class="botones">
-    <button class="reset" onclick="reiniciar()">🔄 Nuevo sorteo</button>
-    <button class="export" onclick="exportar()">📤 Exportar clientes</button>
-</div>
-
-<div class="grid" id="grid"></div>
-
-<script>
-const grid = document.getElementById("grid");
-
-// Cargar datos
-let datos = JSON.parse(localStorage.getItem("datos")) || {};
-
-// Actualizar contadores
-function actualizarInfo() {
-    let vendidos = Object.keys(datos).length;
-    document.getElementById("vendidos").innerText = vendidos;
-    document.getElementById("disponibles").innerText = 100 - vendidos;
-    document.getElementById("total").innerText = vendidos * 5000;
-}
-
-// Crear tablero
-for (let i = 0; i < 100; i++) {
-    let num = i.toString().padStart(2, '0');
-
-    let div = document.createElement("div");
-    div.classList.add("cell");
-    div.innerText = num;
-
-    if (datos[num]) {
-        div.classList.add("sold");
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dinámicas D y S</title>
+  <style>
+    :root{
+      --bg:#f5f7fb;
+      --card:#ffffff;
+      --text:#1f2937;
+      --muted:#6b7280;
+      --green:#6f9e86;
+      --green-dark:#5d8a74;
+      --red:#ef4444;
+      --red-dark:#dc2626;
+      --line:#e5e7eb;
     }
 
-    div.onclick = () => {
-        if (datos[num]) {
-            alert("⚠️ Este número ya está vendido");
-            return;
-        }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
 
-        let nombre = prompt("Nombre del cliente:");
-        if (!nombre) return;
+    .wrap {
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 16px;
+    }
 
-        let telefono = prompt("Número de teléfono:");
-        if (!telefono) return;
+    .header {
+      text-align: center;
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 16px;
+      box-shadow: 0 6px 18px rgba(0,0,0,.05);
+    }
 
-        datos[num] = { nombre, telefono };
+    .title {
+      font-size: 28px;
+      font-weight: 800;
+      margin: 0 0 8px;
+    }
 
-        localStorage.setItem("datos", JSON.stringify(datos));
+    .subtitle {
+      color: var(--muted);
+      margin: 0;
+      font-size: 14px;
+    }
 
-        div.classList.add("sold");
+    .panel {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 14px;
+    }
 
-        actualizarInfo();
+    .stat, .control {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,.04);
+    }
+
+    .stat {
+      text-align: center;
+    }
+
+    .stat .label {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      margin-bottom: 6px;
+    }
+
+    .stat .value {
+      font-size: 22px;
+      font-weight: 800;
+    }
+
+    .control {
+      grid-column: span 4;
+    }
+
+    .control-grid {
+      display: grid;
+      grid-template-columns: 1.4fr 1fr 1fr auto auto;
+      gap: 10px;
+      align-items: end;
+    }
+
+    .field label {
+      display: block;
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+
+    .field input {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 12px;
+      font-size: 14px;
+      outline: none;
+      background: #fff;
+    }
+
+    .field input:focus {
+      border-color: #94a3b8;
+    }
+
+    button {
+      border: 0;
+      border-radius: 12px;
+      padding: 12px 14px;
+      font-weight: 700;
+      cursor: pointer;
+      font-size: 14px;
+      white-space: nowrap;
+    }
+
+    .btn-primary { background: #2563eb; color: white; }
+    .btn-danger { background: var(--red); color: white; }
+    .btn-dark { background: #111827; color: white; }
+
+    .legend {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      align-items: center;
+      margin-top: 10px;
+      flex-wrap: wrap;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 999px;
+      display: inline-block;
+      margin-right: 6px;
+      vertical-align: middle;
+    }
+
+    .dot.green { background: var(--green); }
+    .dot.red { background: var(--red); }
+
+    .grid {
+      margin-top: 18px;
+      display: grid;
+      grid-template-columns: repeat(10, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .cell {
+      aspect-ratio: 1 / 1;
+      border-radius: 12px;
+      background: var(--green);
+      color: #111;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      user-select: none;
+      box-shadow: 0 2px 8px rgba(0,0,0,.08);
+      border: 1px solid rgba(0,0,0,.08);
+      transition: transform .08s ease, opacity .08s ease;
+      overflow: hidden;
+      padding: 6px;
+      text-align: center;
+    }
+
+    .cell:hover { transform: scale(1.02); }
+
+    .cell.sold {
+      background: var(--red);
+      color: white;
+    }
+
+    .cell .num {
+      font-size: 18px;
+      font-weight: 800;
+      line-height: 1;
+    }
+
+    .cell .mini {
+      font-size: 10px;
+      margin-top: 4px;
+      opacity: .95;
+      line-height: 1.15;
+      word-break: break-word;
+    }
+
+    .sold-list {
+      margin-top: 18px;
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 14px;
+      box-shadow: 0 4px 12px rgba(0,0,0,.04);
+    }
+
+    .sold-list h3 {
+      margin: 0 0 10px;
+      font-size: 16px;
+    }
+
+    .sold-list pre {
+      margin: 0;
+      white-space: pre-wrap;
+      font-family: inherit;
+      color: #374151;
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    @media (max-width: 820px) {
+      .panel { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .control { grid-column: span 2; }
+      .control-grid { grid-template-columns: 1fr 1fr; }
+      .grid { gap: 6px; }
+      .cell .num { font-size: 16px; }
+      .cell .mini { font-size: 9px; }
+    }
+
+    @media (max-width: 520px) {
+      .panel { grid-template-columns: 1fr; }
+      .control { grid-column: span 1; }
+      .control-grid { grid-template-columns: 1fr; }
+      .grid { gap: 5px; }
+      .title { font-size: 24px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="header">
+      <h1 class="title" id="titleText">🔥 Dinámicas D y S 🔥</h1>
+      <p class="subtitle" id="lotteryText">Lotería / sorteo: sin definir</p>
+
+      <div class="panel">
+        <div class="stat">
+          <span class="label">Vendidos</span>
+          <div class="value" id="vendidos">0</div>
+        </div>
+        <div class="stat">
+          <span class="label">Disponibles</span>
+          <div class="value" id="disponibles">100</div>
+        </div>
+        <div class="stat">
+          <span class="label">No disponibles</span>
+          <div class="value" id="noDisponibles">0</div>
+        </div>
+        <div class="stat">
+          <span class="label">Total</span>
+          <div class="value">$<span id="total">0</span></div>
+        </div>
+
+        <div class="control">
+          <div class="control-grid">
+            <div class="field">
+              <label>Nombre de la lotería / sorteo</label>
+              <input id="lotteryInput" type="text" placeholder="Ej: Chontico Noche" />
+            </div>
+
+            <div class="field">
+              <label>Valor por número</label>
+              <input id="valorInput" type="number" value="5000" min="0" />
+            </div>
+
+            <div class="field">
+              <label>Nombre visible del grupo</label>
+              <input id="groupNameInput" type="text" value="Dinámicas D y S" />
+            </div>
+
+            <button class="btn-primary" onclick="guardarConfig()">Guardar</button>
+            <button class="btn-danger" onclick="nuevoSorteo()">Nuevo sorteo</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="legend">
+        <span><span class="dot green"></span>Disponible</span>
+        <span><span class="dot red"></span>Vendido</span>
+      </div>
+    </div>
+
+    <div class="grid" id="grid"></div>
+
+    <div class="sold-list">
+      <h3>Clientes vendidos</h3>
+      <pre id="listaClientes">Sin ventas todavía.</pre>
+    </div>
+  </div>
+
+  <script>
+    const grid = document.getElementById("grid");
+    const vendidosEl = document.getElementById("vendidos");
+    const disponiblesEl = document.getElementById("disponibles");
+    const noDisponiblesEl = document.getElementById("noDisponibles");
+    const totalEl = document.getElementById("total");
+    const listaClientesEl = document.getElementById("listaClientes");
+    const lotteryText = document.getElementById("lotteryText");
+    const titleText = document.getElementById("titleText");
+
+    const lotteryInput = document.getElementById("lotteryInput");
+    const valorInput = document.getElementById("valorInput");
+    const groupNameInput = document.getElementById("groupNameInput");
+
+    let datos = JSON.parse(localStorage.getItem("datos")) || {};
+    let config = JSON.parse(localStorage.getItem("config")) || {
+      lotteryName: "",
+      valor: 5000,
+      groupName: "Dinámicas D y S"
+    };
+
+    lotteryInput.value = config.lotteryName || "";
+    valorInput.value = config.valor || 5000;
+    groupNameInput.value = config.groupName || "Dinámicas D y S";
+
+    function guardarConfig() {
+      config.lotteryName = lotteryInput.value.trim();
+      config.valor = parseInt(valorInput.value, 10) || 0;
+      config.groupName = groupNameInput.value.trim() || "Dinámicas D y S";
+      localStorage.setItem("config", JSON.stringify(config));
+      renderHeader();
+      actualizarResumen();
+      alert("✅ Configuración guardada");
+    }
+
+    function renderHeader() {
+      titleText.textContent = `🔥 ${config.groupName} 🔥`;
+      lotteryText.textContent = config.lotteryName
+        ? `Lotería / sorteo: ${config.lotteryName}`
+        : "Lotería / sorteo: sin definir";
+    }
+
+    function actualizarResumen() {
+      const vendidos = Object.keys(datos).length;
+      const disponibles = 100 - vendidos;
+      const valor = parseInt(config.valor, 10) || 0;
+
+      vendidosEl.textContent = vendidos;
+      disponiblesEl.textContent = disponibles;
+      noDisponiblesEl.textContent = vendidos;
+      totalEl.textContent = vendidos * valor;
+
+      const clientes = Object.keys(datos)
+        .sort((a, b) => Number(a) - Number(b))
+        .map(num => {
+          const c = datos[num];
+          return `${num} -> ${c.nombre} | ${c.telefono}`;
+        });
+
+      listaClientesEl.textContent = clientes.length
+        ? clientes.join("\n")
+        : "Sin ventas todavía.";
+    }
+
+    function guardarDatos() {
+      localStorage.setItem("datos", JSON.stringify(datos));
+    }
+
+    function marcarVendido(num, div) {
+      if (datos[num]) {
+        alert("⚠️ Este número ya está vendido");
+        return;
+      }
+
+      const nombre = prompt("Nombre del cliente:");
+      if (!nombre) return;
+
+      const telefono = prompt("Número de teléfono:");
+      if (!telefono) return;
+
+      datos[num] = {
+        nombre: nombre.trim(),
+        telefono: telefono.trim(),
+        fecha: new Date().toLocaleString()
+      };
+
+      div.classList.add("sold");
+      div.querySelector(".mini").textContent = `${nombre.trim()}\n${telefono.trim()}`;
+      guardarDatos();
+      actualizarResumen();
+    }
+
+    function renderGrid() {
+      grid.innerHTML = "";
+
+      for (let i = 0; i < 100; i++) {
+        const num = i.toString().padStart(2, "0");
+
+        const div = document.createElement("div");
+        div.className = "cell" + (datos[num] ? " sold" : "");
+        div.innerHTML = `
+          <div class="num">${num}</div>
+          <div class="mini">${datos[num] ? datos[num].nombre + "<br>" + datos[num].telefono : "Disponible"}</div>
+        `;
+
+        div.addEventListener("click", () => marcarVendido(num, div));
+        grid.appendChild(div);
+      }
+    }
+
+    function nuevoSorteo() {
+      const confirmacion = confirm("¿Seguro que quieres borrar todo y empezar un nuevo sorteo?");
+      if (!confirmacion) return;
+
+      localStorage.removeItem("datos");
+      datos = {};
+      renderGrid();
+      actualizarResumen();
+      alert("✅ Nuevo sorteo iniciado");
+    }
+
+    renderHeader();
+    renderGrid();
+    actualizarResumen();
+  </script>
+</body>
+</html>
