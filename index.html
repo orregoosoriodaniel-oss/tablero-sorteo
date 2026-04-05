@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>Tablero Sorteo</title>
+<title>Dinámicas D y S</title>
 
 <style>
 body {
@@ -11,9 +11,30 @@ body {
     background: #f5f5f5;
 }
 
-h2 {
-    margin-top: 20px;
+h1 {
+    margin-top: 10px;
 }
+
+.panel {
+    margin: 10px;
+    font-weight: bold;
+}
+
+.botones {
+    margin: 10px;
+}
+
+button {
+    padding: 8px 12px;
+    margin: 5px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.reset { background: #ff4d4d; color: white; }
+.export { background: #4CAF50; color: white; }
 
 .grid {
     display: grid;
@@ -33,7 +54,6 @@ h2 {
     border-radius: 10px;
     cursor: pointer;
     font-weight: bold;
-    color: black;
 }
 
 .sold {
@@ -45,13 +65,34 @@ h2 {
 
 <body>
 
-<h2>🎯 TABLERO DE SORTEO</h2>
+<h1>🔥 Dinámicas D y S 🔥</h1>
+
+<div class="panel">💰 Vendidos: <span id="vendidos">0</span></div>
+<div class="panel">📊 Disponibles: <span id="disponibles">100</span></div>
+<div class="panel">💵 Total: $<span id="total">0</span></div>
+
+<div class="botones">
+    <button class="reset" onclick="reiniciar()">🔄 Nuevo sorteo</button>
+    <button class="export" onclick="exportar()">📤 Exportar clientes</button>
+</div>
 
 <div class="grid" id="grid"></div>
 
 <script>
 const grid = document.getElementById("grid");
 
+// Cargar datos
+let datos = JSON.parse(localStorage.getItem("datos")) || {};
+
+// Actualizar contadores
+function actualizarInfo() {
+    let vendidos = Object.keys(datos).length;
+    document.getElementById("vendidos").innerText = vendidos;
+    document.getElementById("disponibles").innerText = 100 - vendidos;
+    document.getElementById("total").innerText = vendidos * 5000;
+}
+
+// Crear tablero
 for (let i = 0; i < 100; i++) {
     let num = i.toString().padStart(2, '0');
 
@@ -59,13 +100,26 @@ for (let i = 0; i < 100; i++) {
     div.classList.add("cell");
     div.innerText = num;
 
+    if (datos[num]) {
+        div.classList.add("sold");
+    }
+
     div.onclick = () => {
-        div.classList.toggle("sold");
-    };
+        if (datos[num]) {
+            alert("⚠️ Este número ya está vendido");
+            return;
+        }
 
-    grid.appendChild(div);
-}
-</script>
+        let nombre = prompt("Nombre del cliente:");
+        if (!nombre) return;
 
-</body>
-</html>
+        let telefono = prompt("Número de teléfono:");
+        if (!telefono) return;
+
+        datos[num] = { nombre, telefono };
+
+        localStorage.setItem("datos", JSON.stringify(datos));
+
+        div.classList.add("sold");
+
+        actualizarInfo();
