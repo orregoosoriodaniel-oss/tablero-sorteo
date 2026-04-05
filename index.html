@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
@@ -11,13 +11,12 @@
       --text:#1f2937;
       --muted:#6b7280;
       --green:#6f9e86;
-      --green-dark:#5d8a74;
       --red:#ef4444;
-      --red-dark:#dc2626;
       --line:#e5e7eb;
     }
 
     * { box-sizing: border-box; }
+
     body {
       margin: 0;
       font-family: Arial, Helvetica, sans-serif;
@@ -49,6 +48,25 @@
     .subtitle {
       color: var(--muted);
       margin: 0;
+      font-size: 14px;
+      line-height: 1.4;
+    }
+
+    .prizes {
+      margin-top: 10px;
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      font-weight: 800;
+      color: #111;
+    }
+
+    .prize-pill {
+      background: #f3f4f6;
+      border: 1px solid #d1d5db;
+      border-radius: 999px;
+      padding: 8px 12px;
       font-size: 14px;
     }
 
@@ -89,7 +107,7 @@
 
     .control-grid {
       display: grid;
-      grid-template-columns: 1.4fr 1fr 1fr auto auto;
+      grid-template-columns: 1.4fr 1fr 1fr 1fr 1fr auto auto;
       gap: 10px;
       align-items: end;
     }
@@ -109,6 +127,14 @@
       font-size: 14px;
       outline: none;
       background: #fff;
+      color: #111;
+      font-weight: 700;
+    }
+
+    .field input::placeholder {
+      color: #111;
+      opacity: 1;
+      font-weight: 800;
     }
 
     .field input:focus {
@@ -127,7 +153,6 @@
 
     .btn-primary { background: #2563eb; color: white; }
     .btn-danger { background: var(--red); color: white; }
-    .btn-dark { background: #111827; color: white; }
 
     .legend {
       display: flex;
@@ -222,10 +247,22 @@
       line-height: 1.45;
     }
 
+    @media (max-width: 920px) {
+      .control-grid {
+        grid-template-columns: 1fr 1fr 1fr 1fr;
+      }
+      .control-grid .field:nth-child(1) { grid-column: span 2; }
+      .control-grid .field:nth-child(2) { grid-column: span 1; }
+      .control-grid .field:nth-child(3) { grid-column: span 1; }
+      .control-grid .field:nth-child(4),
+      .control-grid .field:nth-child(5) { grid-column: span 2; }
+      .control-grid .btn-primary,
+      .control-grid .btn-danger { grid-column: span 2; }
+    }
+
     @media (max-width: 820px) {
       .panel { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .control { grid-column: span 2; }
-      .control-grid { grid-template-columns: 1fr 1fr; }
       .grid { gap: 6px; }
       .cell .num { font-size: 16px; }
       .cell .mini { font-size: 9px; }
@@ -235,8 +272,12 @@
       .panel { grid-template-columns: 1fr; }
       .control { grid-column: span 1; }
       .control-grid { grid-template-columns: 1fr; }
+      .control-grid .field,
+      .control-grid .btn-primary,
+      .control-grid .btn-danger { grid-column: span 1; }
       .grid { gap: 5px; }
       .title { font-size: 24px; }
+      .prizes { flex-direction: column; align-items: center; }
     }
   </style>
 </head>
@@ -245,6 +286,12 @@
     <div class="header">
       <h1 class="title" id="titleText">🔥 Dinámicas D y S 🔥</h1>
       <p class="subtitle" id="lotteryText">Lotería / sorteo: sin definir</p>
+
+      <div class="prizes" id="prizesPreview">
+        <div class="prize-pill">🥇 Premio mayor: <span id="p1View">0000</span></div>
+        <div class="prize-pill">🥈 Premio medio: <span id="p2View">0000</span></div>
+        <div class="prize-pill">🥉 Premio menor: <span id="p3View">0000</span></div>
+      </div>
 
       <div class="panel">
         <div class="stat">
@@ -281,6 +328,21 @@
               <input id="groupNameInput" type="text" value="Dinámicas D y S" />
             </div>
 
+            <div class="field">
+              <label>🥇 Premio mayor</label>
+              <input id="premio1" type="text" placeholder="0000" />
+            </div>
+
+            <div class="field">
+              <label>🥈 Premio medio</label>
+              <input id="premio2" type="text" placeholder="0000" />
+            </div>
+
+            <div class="field">
+              <label>🥉 Premio menor</label>
+              <input id="premio3" type="text" placeholder="0000" />
+            </div>
+
             <button class="btn-primary" onclick="guardarConfig()">Guardar</button>
             <button class="btn-danger" onclick="nuevoSorteo()">Nuevo sorteo</button>
           </div>
@@ -314,22 +376,44 @@
     const lotteryInput = document.getElementById("lotteryInput");
     const valorInput = document.getElementById("valorInput");
     const groupNameInput = document.getElementById("groupNameInput");
+    const premio1Input = document.getElementById("premio1");
+    const premio2Input = document.getElementById("premio2");
+    const premio3Input = document.getElementById("premio3");
+
+    const p1View = document.getElementById("p1View");
+    const p2View = document.getElementById("p2View");
+    const p3View = document.getElementById("p3View");
 
     let datos = JSON.parse(localStorage.getItem("datos")) || {};
     let config = JSON.parse(localStorage.getItem("config")) || {
       lotteryName: "",
       valor: 5000,
-      groupName: "Dinámicas D y S"
+      groupName: "Dinámicas D y S",
+      premio1: "",
+      premio2: "",
+      premio3: ""
     };
 
     lotteryInput.value = config.lotteryName || "";
     valorInput.value = config.valor || 5000;
     groupNameInput.value = config.groupName || "Dinámicas D y S";
+    premio1Input.value = config.premio1 || "";
+    premio2Input.value = config.premio2 || "";
+    premio3Input.value = config.premio3 || "";
+
+    function formatoPremio(valor) {
+      const v = String(valor || "").trim();
+      return v ? v : "0000";
+    }
 
     function guardarConfig() {
       config.lotteryName = lotteryInput.value.trim();
       config.valor = parseInt(valorInput.value, 10) || 0;
       config.groupName = groupNameInput.value.trim() || "Dinámicas D y S";
+      config.premio1 = premio1Input.value.trim();
+      config.premio2 = premio2Input.value.trim();
+      config.premio3 = premio3Input.value.trim();
+
       localStorage.setItem("config", JSON.stringify(config));
       renderHeader();
       actualizarResumen();
@@ -341,6 +425,10 @@
       lotteryText.textContent = config.lotteryName
         ? `Lotería / sorteo: ${config.lotteryName}`
         : "Lotería / sorteo: sin definir";
+
+      p1View.textContent = formatoPremio(config.premio1);
+      p2View.textContent = formatoPremio(config.premio2);
+      p3View.textContent = formatoPremio(config.premio3);
     }
 
     function actualizarResumen() {
@@ -388,7 +476,11 @@
       };
 
       div.classList.add("sold");
-      div.querySelector(".mini").textContent = `${nombre.trim()}\n${telefono.trim()}`;
+      const mini = div.querySelector(".mini");
+      if (mini) {
+        mini.textContent = `${nombre.trim()}\n${telefono.trim()}`;
+      }
+
       guardarDatos();
       actualizarResumen();
     }
@@ -403,7 +495,7 @@
         div.className = "cell" + (datos[num] ? " sold" : "");
         div.innerHTML = `
           <div class="num">${num}</div>
-          <div class="mini">${datos[num] ? datos[num].nombre + "<br>" + datos[num].telefono : "Disponible"}</div>
+          <div class="mini">${datos[num] ? `${datos[num].nombre}<br>${datos[num].telefono}` : ""}</div>
         `;
 
         div.addEventListener("click", () => marcarVendido(num, div));
