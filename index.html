@@ -1,4 +1,4 @@
-               <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
@@ -13,6 +13,9 @@
       --green:#6f9e86;
       --red:#ef4444;
       --line:#e5e7eb;
+      --winner1:#22c55e;
+      --winner2:#3b82f6;
+      --winner3:#a855f7;
     }
 
     * { box-sizing: border-box; }
@@ -50,6 +53,13 @@
       margin: 0;
       font-size: 14px;
       line-height: 1.4;
+    }
+
+    .mode-text {
+      margin-top: 8px;
+      font-size: 13px;
+      font-weight: 700;
+      color: #111827;
     }
 
     .prizes {
@@ -155,6 +165,16 @@
 
     .btn-primary { background: #2563eb; color: white; }
     .btn-danger { background: var(--red); color: white; }
+    .btn-neutral { background: #111827; color: white; }
+    .btn-soft { background: #e5e7eb; color: #111827; }
+
+    .winner-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+      margin-top: 12px;
+    }
 
     .legend {
       display: flex;
@@ -178,6 +198,9 @@
 
     .dot.green { background: var(--green); }
     .dot.red { background: var(--red); }
+    .dot.w1 { background: var(--winner1); }
+    .dot.w2 { background: var(--winner2); }
+    .dot.w3 { background: var(--winner3); }
 
     .grid {
       margin-top: 18px;
@@ -210,6 +233,21 @@
     .cell.sold {
       background: var(--red);
       color: white;
+    }
+
+    .cell.winner1 {
+      background: var(--winner1) !important;
+      color: white !important;
+    }
+
+    .cell.winner2 {
+      background: var(--winner2) !important;
+      color: white !important;
+    }
+
+    .cell.winner3 {
+      background: var(--winner3) !important;
+      color: white !important;
     }
 
     .cell .num {
@@ -280,6 +318,7 @@
       .grid { gap: 5px; }
       .title { font-size: 24px; }
       .prizes { flex-direction: column; align-items: center; }
+      .winner-actions { flex-direction: column; }
     }
   </style>
 </head>
@@ -288,6 +327,7 @@
     <div class="header">
       <h1 class="title" id="titleText">🔥 Dinámicas D y S 🔥</h1>
       <p class="subtitle" id="lotteryText">Lotería / sorteo: sin definir | Valor: $0</p>
+      <div class="mode-text" id="modeText">Modo actual: ventas normales</div>
 
       <div class="prizes" id="prizesPreview">
         <div class="prize-pill">🥇 Premio mayor: <span id="p1View">0000</span></div>
@@ -348,12 +388,23 @@
             <button class="btn-primary" onclick="guardarConfig()">Guardar</button>
             <button class="btn-danger" onclick="nuevoSorteo()">Nuevo sorteo</button>
           </div>
+
+          <div class="winner-actions">
+            <button class="btn-neutral" onclick="activarModo('mayor')">🥇 Marcar mayor</button>
+            <button class="btn-neutral" onclick="activarModo('medio')">🥈 Marcar medio</button>
+            <button class="btn-neutral" onclick="activarModo('menor')">🥉 Marcar menor</button>
+            <button class="btn-soft" onclick="salirModo()">✋ Salir modo ganador</button>
+            <button class="btn-soft" onclick="limpiarGanadores()">🧹 Limpiar ganadores</button>
+          </div>
         </div>
       </div>
 
       <div class="legend">
         <span><span class="dot green"></span>Disponible</span>
         <span><span class="dot red"></span>Vendido</span>
+        <span><span class="dot w1"></span>Ganador mayor</span>
+        <span><span class="dot w2"></span>Ganador medio</span>
+        <span><span class="dot w3"></span>Ganador menor</span>
       </div>
     </div>
 
@@ -362,6 +413,11 @@
     <div class="sold-list">
       <h3>Clientes vendidos</h3>
       <pre id="listaClientes">Sin ventas todavía.</pre>
+    </div>
+
+    <div class="sold-list">
+      <h3>Ganadores del sorteo</h3>
+      <pre id="listaGanadores">Aún no hay ganadores.</pre>
     </div>
   </div>
 
@@ -372,8 +428,10 @@
     const noDisponiblesEl = document.getElementById("noDisponibles");
     const totalEl = document.getElementById("total");
     const listaClientesEl = document.getElementById("listaClientes");
+    const listaGanadoresEl = document.getElementById("listaGanadores");
     const lotteryText = document.getElementById("lotteryText");
     const titleText = document.getElementById("titleText");
+    const modeText = document.getElementById("modeText");
 
     const lotteryInput = document.getElementById("lotteryInput");
     const valorInput = document.getElementById("valorInput");
@@ -387,6 +445,14 @@
     const p3View = document.getElementById("p3View");
 
     let datos = JSON.parse(localStorage.getItem("datos")) || {};
+    let ganadores = JSON.parse(localStorage.getItem("ganadores")) || {
+      mayor: null,
+      medio: null,
+      menor: null
+    };
+
+    let modoGanador = null;
+
     let config = JSON.parse(localStorage.getItem("config")) || {
       lotteryName: "",
       valor: 5000,
@@ -426,6 +492,16 @@
       p1View.textContent = formatoPremio(config.premio1);
       p2View.textContent = formatoPremio(config.premio2);
       p3View.textContent = formatoPremio(config.premio3);
+
+      if (modoGanador) {
+        const texto =
+          modoGanador === "mayor" ? "🥇 Selecciona el ganador mayor" :
+          modoGanador === "medio" ? "🥈 Selecciona el ganador medio" :
+          "🥉 Selecciona el ganador menor";
+        modeText.textContent = `Modo actual: ${texto}`;
+      } else {
+        modeText.textContent = "Modo actual: ventas normales";
+      }
     }
 
     function actualizarResumen() {
@@ -448,6 +524,13 @@
       listaClientesEl.textContent = clientes.length
         ? clientes.join("\n")
         : "Sin ventas todavía.";
+
+      const gan = [];
+      if (ganadores.mayor) gan.push(`🥇 Mayor: ${ganadores.mayor}`);
+      if (ganadores.medio) gan.push(`🥈 Medio: ${ganadores.medio}`);
+      if (ganadores.menor) gan.push(`🥉 Menor: ${ganadores.menor}`);
+
+      listaGanadoresEl.textContent = gan.length ? gan.join("\n") : "Aún no hay ganadores.";
     }
 
     function guardarConfig() {
@@ -460,6 +543,37 @@
 
     function guardarDatos() {
       localStorage.setItem("datos", JSON.stringify(datos));
+    }
+
+    function guardarGanadores() {
+      localStorage.setItem("ganadores", JSON.stringify(ganadores));
+    }
+
+    function activarModo(tipo) {
+      modoGanador = tipo;
+      renderHeader();
+      alert("Selecciona ahora el número ganador.");
+    }
+
+    function salirModo() {
+      modoGanador = null;
+      renderHeader();
+      alert("✅ Saliste del modo ganador");
+    }
+
+    function limpiarGanadores() {
+      const ok = confirm("¿Seguro que quieres limpiar los ganadores?");
+      if (!ok) return;
+
+      ganadores = {
+        mayor: null,
+        medio: null,
+        menor: null
+      };
+      guardarGanadores();
+      renderGrid();
+      actualizarResumen();
+      renderHeader();
     }
 
     function marcarVendido(num, div) {
@@ -490,6 +604,24 @@
       actualizarResumen();
     }
 
+    function asignarGanador(tipo, num) {
+      ganadores[tipo] = num;
+      guardarGanadores();
+      modoGanador = null;
+      renderGrid();
+      actualizarResumen();
+      renderHeader();
+    }
+
+    function handleCellClick(num, div) {
+      if (modoGanador) {
+        asignarGanador(modoGanador, num);
+        return;
+      }
+
+      marcarVendido(num, div);
+    }
+
     function renderGrid() {
       grid.innerHTML = "";
 
@@ -497,13 +629,19 @@
         const num = i.toString().padStart(2, "0");
 
         const div = document.createElement("div");
-        div.className = "cell" + (datos[num] ? " sold" : "");
+        div.className = "cell";
+
+        if (datos[num]) div.classList.add("sold");
+        if (ganadores.mayor === num) div.classList.add("winner1");
+        if (ganadores.medio === num) div.classList.add("winner2");
+        if (ganadores.menor === num) div.classList.add("winner3");
+
         div.innerHTML = `
           <div class="num">${num}</div>
           <div class="mini">${datos[num] ? `${datos[num].nombre}<br>${datos[num].telefono}` : ""}</div>
         `;
 
-        div.addEventListener("click", () => marcarVendido(num, div));
+        div.addEventListener("click", () => handleCellClick(num, div));
         grid.appendChild(div);
       }
     }
@@ -513,9 +651,15 @@
       if (!confirmacion) return;
 
       localStorage.removeItem("datos");
+      localStorage.removeItem("ganadores");
+
       datos = {};
+      ganadores = { mayor: null, medio: null, menor: null };
+      modoGanador = null;
+
       renderGrid();
       actualizarResumen();
+      renderHeader();
       alert("✅ Nuevo sorteo iniciado");
     }
 
