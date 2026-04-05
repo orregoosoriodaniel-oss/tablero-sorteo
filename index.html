@@ -257,11 +257,7 @@
     }
 
     .cell .mini {
-      font-size: 10px;
-      margin-top: 4px;
-      opacity: .95;
-      line-height: 1.15;
-      word-break: break-word;
+      display: none;
     }
 
     .sold-list {
@@ -305,7 +301,6 @@
       .control { grid-column: span 2; }
       .grid { gap: 6px; }
       .cell .num { font-size: 16px; }
-      .cell .mini { font-size: 9px; }
     }
 
     @media (max-width: 520px) {
@@ -526,9 +521,18 @@
         : "Sin ventas todavía.";
 
       const gan = [];
-      if (ganadores.mayor) gan.push(`🥇 Mayor: ${ganadores.mayor}`);
-      if (ganadores.medio) gan.push(`🥈 Medio: ${ganadores.medio}`);
-      if (ganadores.menor) gan.push(`🥉 Menor: ${ganadores.menor}`);
+      if (ganadores.mayor) {
+        const c = datos[ganadores.mayor];
+        gan.push(`🥇 Mayor: ${ganadores.mayor} - ${c ? c.nombre : ""}`);
+      }
+      if (ganadores.medio) {
+        const c = datos[ganadores.medio];
+        gan.push(`🥈 Medio: ${ganadores.medio} - ${c ? c.nombre : ""}`);
+      }
+      if (ganadores.menor) {
+        const c = datos[ganadores.menor];
+        gan.push(`🥉 Menor: ${ganadores.menor} - ${c ? c.nombre : ""}`);
+      }
 
       listaGanadoresEl.textContent = gan.length ? gan.join("\n") : "Aún no hay ganadores.";
     }
@@ -595,11 +599,6 @@
       };
 
       div.classList.add("sold");
-      const mini = div.querySelector(".mini");
-      if (mini) {
-        mini.innerHTML = `${nombre.trim()}<br>${telefono.trim()}`;
-      }
-
       guardarDatos();
       actualizarResumen();
     }
@@ -638,7 +637,7 @@
 
         div.innerHTML = `
           <div class="num">${num}</div>
-          <div class="mini">${datos[num] ? `${datos[num].nombre}<br>${datos[num].telefono}` : ""}</div>
+          <div class="mini"></div>
         `;
 
         div.addEventListener("click", () => handleCellClick(num, div));
